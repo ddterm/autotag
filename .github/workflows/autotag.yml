@@ -11,7 +11,47 @@ jobs:
   tag:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - run: |
-          git tag "$(printf '%(%Y.%m.%d)T').${{ github.run_number }}"
-          git push --tags
+      - uses: actions/github-script@v6
+        with:
+          debug: true
+          script: |
+            const today = new Date();
+
+            const prefix = [
+              today.getUTCFullYear().toString(),
+              today.getUTCMonth().toString().padStart(2, '0'),
+              today.getUTCDay().toString().padStart(2, '0'),
+            ].join('.') + '.';
+
+            core.info(`Tag prefix: ${prefix}`);
+
+            const lastComponent = 0;
+
+            for await (const response of github.paginate.iterator(github.rest.repos.listTags, context.repo)) {
+              for (const tag of response.data) {
+                if (!tag.name.startsWith(prefix))
+                  continue;
+
+                try {
+                  const components = tag.name.split('.', 4);
+                  const n = parseInt(components[3], 10);
+
+                  if (n >= lastComponent)
+                    lastComponent = n + 1;
+
+                } catch (err) {
+                  core.warning(`Can't parse tag ${tag}: ${err}`);
+                }
+              }
+            }
+
+            const ref = `refs/tags/${prefix}${lastComponent}`;
+            const sha = context.sha;
+
+            core.info(`Tagging ${sha} as ${ref}`);
+
+            await rest.git.createRef({
+              ...context.repo,
+              ref,
+              sha,
+            });
