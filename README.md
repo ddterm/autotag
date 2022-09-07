@@ -1,7 +1,7 @@
-Autotag Reusable Workflow
--------------------------
+Autotag Action
+--------------
 
-Automatically create tags on the main branch in yyyy.mm.dd.n format.
+Automatically create tags in yyyy.mm.dd.n format.
 
 How to use: see [`.github/workflows/main.yml`].
 

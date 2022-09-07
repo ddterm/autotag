@@ -1,0 +1,82 @@
+name: autotag
+description: 'Automatically create tags in yyyy.mm.dd.n format'
+
+inputs:
+  dry-run:
+    description: "Don't create the tag"
+    default: 'false'
+    required: false
+
+outputs:
+  tag:
+    description: "Generated tag name"
+    value: ${{ fromJson(steps.tag.outputs.result).tag }}
+  ref:
+    description: "Generated tag ref"
+    value: ${{ fromJson(steps.tag.outputs.result).ref }}
+  sha:
+    description: "Tagged commit sha"
+    value: ${{ fromJson(steps.tag.outputs.result).sha }}
+  json:
+    description: "All outputs in JSON"
+    value: ${{ steps.tag.outputs.result }}
+
+runs:
+  using: composite
+  steps:
+    - id: tag
+      uses: actions/github-script@v6
+      with:
+        debug: true
+        script: |
+          const today = new Date();
+
+          const prefix = [
+            today.getUTCFullYear().toString(),
+            (today.getUTCMonth() + 1).toString().padStart(2, '0'),
+            today.getUTCDate().toString().padStart(2, '0'),
+          ].join('.') + '.';
+
+          core.info(`Tag prefix: ${prefix}`);
+
+          let lastComponent = 0;
+
+          for await (const response of github.paginate.iterator(github.rest.repos.listTags, context.repo)) {
+            for (const tag of response.data) {
+              if (!tag.name.startsWith(prefix))
+                continue;
+
+              core.debug(`Found matching tag: ${tag.name}`);
+
+              try {
+                const components = tag.name.split('.', 4);
+                const n = parseInt(components[3], 10);
+
+                if (n >= lastComponent)
+                  lastComponent = n + 1;
+
+              } catch (err) {
+                core.warning(`Can't parse tag ${tag}: ${err}`);
+              }
+            }
+          }
+
+          const tag = `${prefix}${lastComponent}`;
+          const ref = `refs/tags/${tag}`;
+          const sha = context.sha;
+          const dryRun = ${{ inputs.dry-run }};
+
+          if (dryRun) {
+            core.info(`Generated tag: ${tag}`);
+            return { tag, ref, sha };
+          }
+
+          core.info(`Tagging ${sha} as ${ref}`);
+
+          await github.rest.git.createRef({
+            ...context.repo,
+            ref,
+            sha,
+          });
+
+          return { tag, ref, sha };
