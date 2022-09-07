@@ -7,6 +7,11 @@ inputs:
     default: 'false'
     required: false
 
+  github-token:
+    description: "GitHub access token. Use a personal access token to trigger workflow runs from created tags."
+    default: ${{ github.token }}
+    required: false
+
 outputs:
   tag:
     description: "Generated tag name"
@@ -28,6 +33,7 @@ runs:
       uses: actions/github-script@v6
       with:
         debug: true
+        github-token: ${{ inputs.github-token }}
         script: |
           const today = new Date();
 
