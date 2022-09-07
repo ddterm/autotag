@@ -2,16 +2,45 @@ name: autotag
 
 on:
   workflow_call:
-  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Don't create the tag"
+        default: false
+        required: false
+        type: boolean
 
-permissions:
-  contents: write
+    outputs:
+      tag:
+        description: "Generated tag name"
+        value: ${{ fromJson(jobs.tag.outputs.json).tag }}
+      ref:
+        description: "Generated tag ref"
+        value: ${{ fromJson(jobs.tag.outputs.json).ref }}
+      sha:
+        description: "Tagged commit sha"
+        value: ${{ fromJson(jobs.tag.outputs.json).sha }}
+      json:
+        description: "All outputs in JSON"
+        value: jobs.tag.outputs.json
+
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Don't create the tag"
+        default: false
+        required: false
+        type: boolean
 
 jobs:
   tag:
     runs-on: ubuntu-latest
+
+    outputs:
+      json: ${{ steps.tag.outputs.result }}
+
     steps:
-      - uses: actions/github-script@v6
+      - id: tag
+        uses: actions/github-script@v6
         with:
           debug: true
           script: |
@@ -25,12 +54,14 @@ jobs:
 
             core.info(`Tag prefix: ${prefix}`);
 
-            const lastComponent = 0;
+            let lastComponent = 0;
 
             for await (const response of github.paginate.iterator(github.rest.repos.listTags, context.repo)) {
               for (const tag of response.data) {
                 if (!tag.name.startsWith(prefix))
                   continue;
+
+                core.debug(`Found matching tag: ${tag.name}`);
 
                 try {
                   const components = tag.name.split('.', 4);
@@ -45,8 +76,15 @@ jobs:
               }
             }
 
-            const ref = `refs/tags/${prefix}${lastComponent}`;
+            const tag = `${prefix}${lastComponent}`;
+            const ref = `refs/tags/${tag}`;
             const sha = context.sha;
+            const dryRun = ${{ inputs.dry-run }};
+
+            if (dryRun) {
+              core.info(`Generated tag: ${tag}`);
+              return { tag, ref, sha };
+            }
 
             core.info(`Tagging ${sha} as ${ref}`);
 
@@ -55,3 +93,5 @@ jobs:
               ref,
               sha,
             });
+
+            return { tag, ref, sha };

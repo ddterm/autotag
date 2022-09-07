@@ -1,0 +1,23 @@
+name: push
+
+on:
+  push:
+    branches-ignore:
+      - main
+    tags:
+      - "*"
+
+permissions:
+  contents: read
+
+jobs:
+  dummy:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo test
+
+  tag:
+    needs: dummy
+    uses: ./.github/workflows/autotag.yml
+    with:
+      dry-run: true
