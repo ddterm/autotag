@@ -1,0 +1,17 @@
+name: autotag
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          git tag "$(printf '%(%Y.%m.%d)T').${{ github.run_attempt }}"
+          git push --tags

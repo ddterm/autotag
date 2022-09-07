@@ -1,0 +1,21 @@
+name: main
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  dummy:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo test
+
+  tag:
+    needs: dummy
+    permissions:
+      contents: write
+    uses: ./.github/workflows/autotag.yml
