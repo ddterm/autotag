@@ -13,5 +13,5 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: |
-          git tag "$(printf '%(%Y.%m.%d)T').${{ github.run_attempt }}"
+          git tag "$(printf '%(%Y.%m.%d)T').${{ github.run_number }}"
           git push --tags
