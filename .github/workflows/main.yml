@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: dummy
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: app-token
         uses: getsentry/action-github-app-token@v2
