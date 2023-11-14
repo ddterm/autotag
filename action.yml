@@ -30,7 +30,7 @@ runs:
   using: composite
   steps:
     - id: tag
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         debug: true
         github-token: ${{ inputs.github-token }}
