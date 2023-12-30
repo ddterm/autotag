@@ -7,20 +7,9 @@ on:
     tags:
       - "*"
 
-permissions:
-  contents: read
-
 jobs:
-  dummy:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo test
-
   tag:
     runs-on: ubuntu-latest
-    needs: dummy
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: ./
