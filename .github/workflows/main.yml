@@ -15,12 +15,3 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./
-      - uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'push.yml',
-              ref: '${{ github.ref }}',
-            })
